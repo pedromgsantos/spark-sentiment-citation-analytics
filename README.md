@@ -5,6 +5,8 @@ Project for the Big Data Analysis course, Master's in Data Science and Advanced 
 This repository is organized as a notebook-driven workflow backed by reusable utilities in `src/`
 and a containerized streaming stack in `infra/`.
 
+This repository reflects a cleaned version of the project, with improved organization and documentation for clarity and reproducibility.
+
 ---
 
 ## Project Authors
