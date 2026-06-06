@@ -48,9 +48,8 @@ Datasets used:
 .
 ├── README.md
 ├── requirements.txt
-├── docs/                        # Project brief and presentation
-│   ├── Project - BigDataAnalysis - 2025.pdf
-│   └── powerpoint_bda.pptx
+├── docs/                        # Project brief
+│   └── Project - BigDataAnalysis - 2025.pdf
 ├── infra/                       # Docker Compose streaming stack
 │   ├── .env.example
 │   ├── docker-compose.yml
