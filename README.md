@@ -1,50 +1,72 @@
-# Big Data Analytics Project
+# Spark Sentiment & Citation Analytics
 
-End-to-end big data project for sentiment analytics, combining:
+Project for the Big Data Analysis course, Master's in Data Science and Advanced Analytics, NOVA IMS.
 
-- PySpark data engineering and classical ML
-- Transformer-based deep learning experiments
-- Graph analytics on DBLP citation data
-- Near real-time streaming inference with Kafka + MongoDB over Tailscale
+This repository is organized as a notebook-driven workflow backed by reusable utilities in `src/`
+and a containerized streaming stack in `infra/`.
 
-The sentiment dataset used in the core pipeline is:
+---
 
-- Hugging Face: https://huggingface.co/datasets/AmaanP314/youtube-comment-sentiment
+## Project Authors
 
-We also used for graph analysis: https://www.kaggle.com/datasets/mathurinache/citation-network-dataset
+Pedro Santos   – 20XXXXXX – [20XXXXXX@novaims.unl.pt](mailto:20XXXXXX@novaims.unl.pt)
+[Teammate 2]   – 20XXXXXX – [20XXXXXX@novaims.unl.pt](mailto:20XXXXXX@novaims.unl.pt)
+[Teammate 3]   – 20XXXXXX – [20XXXXXX@novaims.unl.pt](mailto:20XXXXXX@novaims.unl.pt)
+[Teammate 4]   – 20XXXXXX – [20XXXXXX@novaims.unl.pt](mailto:20XXXXXX@novaims.unl.pt)
 
-## What This Repository Contains
+---
 
-This repository is organized as a notebook-driven workflow backed by reusable utilities in src and a containerized infra stack in infra.
+## Project Overview
 
-Main capabilities:
+YouTube generates billions of comments daily, and the DBLP citation network spans millions of
+academic publications. Both represent real-world big data challenges requiring scalable tooling.
 
-- Ingest and preprocess large-scale YouTube comment data with Spark
-- Train and compare multiple Spark MLlib-compatible models
-- Fine-tune DistilBERT for 3-class sentiment classification
-- Run graph preprocessing and graph algorithms on large DBLP citation data
-- Stream live YouTube comments into Kafka, score them in Spark Structured Streaming, and persist results to MongoDB
+This project builds an end-to-end Apache Spark pipeline that classifies YouTube comment sentiment
+at scale, and mines the DBLP citation network to map research community structure and field
+evolution over time.
+
+Datasets used:
+- [YouTube Comment Sentiment](https://huggingface.co/datasets/AmaanP314/youtube-comment-sentiment) – HuggingFace
+- [DBLP Citation Network V12](https://www.kaggle.com/datasets/mathurinache/citation-network-dataset) – Kaggle
+
+---
+
+## Project Goals
+
+1. **Data Engineering** – Ingest, clean, and transform both datasets using scalable PySpark
+   DataFrames and SparkSQL, with schema-on-read and partition-aware pipelines.
+2. **ML Classification** – Train and compare multiple Spark MLlib models for 3-class sentiment
+   classification, selecting the best pipeline for downstream streaming use.
+3. **Deep Learning** – Fine-tune DistilBERT using distributed PyTorch via TorchDistributor,
+   with Spark-native inference and evaluation.
+4. **Graph Analytics** – Preprocess the DBLP citation network and run GraphFrames algorithms
+   (PageRank, connected components, community detection, motif finding) to extract research
+   community insights.
+5. **Streaming** – Deploy a live inference pipeline that ingests YouTube comments from Kafka,
+   scores them with the selected MLlib model, and persists results to MongoDB.
+6. **Stakeholder Communication** – Deliver management-facing findings framed around the 4 V's
+   of Big Data, with no algorithm or hyperparameter detail in the presentation.
+
+---
 
 ## Repository Structure
 
 ```text
 .
-├── .gitattributes
-├── .gitignore
 ├── README.md
 ├── requirements.txt
-├── docs/
-│   ├── Project - BigDataAnalaysis - 2025.pdf
+├── docs/                        # Project brief and presentation
+│   ├── Project - BigDataAnalysis - 2025.pdf
 │   └── powerpoint_bda.pptx
-├── infra/
+├── infra/                       # Docker Compose streaming stack
 │   ├── .env.example
 │   ├── docker-compose.yml
 │   ├── README.md
-│   └── youtube_producer/
+│   └── youtube_producer/        # YouTube API -> Kafka producer
 │       ├── Dockerfile
 │       ├── producer.py
 │       └── requirements.txt
-├── notebooks/
+├── notebooks/                   # Main workflow (run in order)
 │   ├── 01_eda.ipynb
 │   ├── 02_ml_classification.ipynb
 │   ├── 03_dl_classification.ipynb
@@ -52,8 +74,8 @@ Main capabilities:
 │   ├── 05_graph_analytics.ipynb
 │   └── 06_streaming.ipynb
 ├── results/
-│   └── model_comparison.csv
-└── src/
+│   └── model_comparison.csv     # Comparative metrics from classical ML runs
+└── src/                         # Reusable Python modules
     ├── config.py
     ├── ml_pipeline.py
     ├── utils.py
@@ -61,175 +83,151 @@ Main capabilities:
     └── utils_ml.py
 ```
 
-## Notebook Workflow
+---
 
-### 01_eda.ipynb
+## Notebooks
 
-- Loads and explores the YouTube sentiment dataset in Spark
-- Performs cleaning and quality checks
-- Produces processed outputs used by downstream notebooks
+- **01_eda.ipynb** – dataset ingestion, quality checks, exploratory analysis, SparkSQL queries,
+  and processed output generation for downstream notebooks
+- **02_ml_classification.ipynb** – classical Spark ML pipelines, model comparison with shared
+  features and splits, confusion matrices, and best-model selection (Linear SVM OvR) for streaming
+- **03_dl_classification.ipynb** – distributed DistilBERT fine-tuning via TorchDistributor,
+  Spark-native batch inference with `predict_batch_udf`, and per-class evaluation with SparkSQL
+- **04_graph_preprocessing.ipynb** – JSONL conversion of the raw DBLP JSON array, schema-on-read,
+  venue normalization, FOS feature engineering, data quality reporting, and partitioned Parquet export
+- **05_graph_analytics.ipynb** – full-graph and focused subgraph analyses using GraphFrames:
+  degree distribution, PageRank, connected components, label propagation, BFS, triangle count,
+  shortest paths, and motif finding
+- **06_streaming.ipynb** – Kafka ingestion, micro-batch scoring with the selected MLlib pipeline,
+  foreachBatch MongoDB upsert, and prediction distribution inspection
 
-### 02_ml_classification.ipynb
+---
 
-- Trains and evaluates classical Spark pipelines on shared features/splits
-- Compares models with common metrics and confusion matrices
-- The streaming notebook uses the best-performing model selected here (Linear SVM OvR pipeline)
+## Core Python Modules (`src/`)
 
-### 03_dl_classification.ipynb
+- **config.py** – centralized paths, Spark defaults, ML hyperparameters, and dataset identifiers
+- **utils.py** – Spark session bootstrap and data cleaning / record preparation helpers
+- **utils_ml.py** – reusable MLlib training and evaluation utilities; includes LR, SVM OvR, NB,
+  Decision Tree, and Random Forest pipeline builders
+- **ml_pipeline.py** – standalone configurable Spark ML pipeline assembly and metric evaluation helpers
+- **utils_dl.py** – Spark-to-HuggingFace data preparation, DistilBERT training and inference
+  helpers for PyTorch
 
-- Fine-tunes DistilBERT via `TorchDistributor` for distributed PyTorch training
-- Uses `predict_batch_udf` for Spark-native distributed inference
-- Evaluates with `MulticlassClassificationEvaluator` and a per-class Spark SQL breakdown
+---
 
-### 04_graph_preprocessing.ipynb
+## Streaming Infrastructure (`infra/`)
 
-- Preprocesses DBLP V12 citation network into graph-ready Parquet
-- Converts large JSON array to JSONL for scalable Spark ingestion
+The `infra/` folder contains a Docker Compose stack with four services:
 
-### 05_graph_analytics.ipynb
+- **tailscale** – secure tailnet exposure of the stack
+- **mongodb** – checkpoint and scored-result persistence
+- **kafka** – broker for comment stream transport
+- **youtube-producer** – polls the YouTube API and publishes normalized comment messages
 
-- Runs GraphFrames algorithms on the prepared DBLP graph
-- Includes full-graph and focused subgraph analyses
-
-### 06_streaming.ipynb
-
-- Connects to Kafka and MongoDB
-- Loads the selected Spark pipeline model
-- Scores streaming comments via micro-batch processing
-- Upserts predictions into MongoDB and inspects output distributions
-
-Important streaming components:
-
-- Producer path: infra/youtube_producer/producer.py
-- Kafka topic: youtube_comments
-- MongoDB write strategy: foreachBatch + bulk upsert
-
-## Core Python Modules (src)
-
-- src/config.py
-	- Centralized paths, Spark defaults, ML hyperparameters, dataset IDs
-
-- src/utils.py
-	- Spark session bootstrap and data cleaning/record preparation helpers
-
-- src/utils_ml.py
-	- Reusable Spark ML training/evaluation utilities and model builders
-	- Includes LR, SVM OvR, NB, DT, RF pipelines
-
-- src/ml_pipeline.py
-	- Standalone configurable Spark ML pipeline assembly and metric evaluation helpers
-
-- src/utils_dl.py
-	- Spark-to-HuggingFace data preparation
-	- DistilBERT training/inference helpers for PyTorch and TensorFlow/Keras
-
-## Streaming Infrastructure (infra)
-
-The infra folder contains a Docker Compose stack with:
-
-- tailscale: secure tailnet exposure
-- mongodb: checkpoint and scored-result persistence
-- kafka: broker for comment stream transport
-- youtube-producer: polls YouTube API and publishes normalized messages
-
-Producer behavior summary:
-
+**Producer behavior:**
 - Maintains a per-video checkpoint in MongoDB
-- First run backfills historical comments
-- Later runs stream only new comments after checkpoint
-- Publishes normalized JSON payloads keyed by comment_id
+- First run backfills all historical comments for the configured video
+- Subsequent runs stream only new comments posted after the checkpoint
+- Publishes normalized JSON payloads keyed by `comment_id`
 
-Message schema:
-
+**Message schema:**
 ```json
 {
-	"comment_id": "string",
-	"video_id": "string",
-	"text": "string",
-	"author": "string",
-	"published_at": "2026-06-02T12:34:56Z",
-	"fetched_at": "2026-06-02T12:35:01Z",
-	"source": "youtube_api"
+  "comment_id":   "string",
+  "video_id":     "string",
+  "text":         "string",
+  "author":       "string",
+  "published_at": "2026-06-02T12:34:56Z",
+  "fetched_at":   "2026-06-02T12:35:01Z",
+  "source":       "youtube_api"
 }
 ```
 
-## Environment Setup
+**Key streaming details:**
+- Kafka topic: `youtube_comments`
+- MongoDB write strategy: `foreachBatch` + bulk upsert
+
+---
+
+## Setup
 
 ### Prerequisites
 
-- Python 3.11+ recommended
+- Python 3.11+
 - Java runtime compatible with Spark
-- Docker + Docker Compose (for infra stack)
+- Docker + Docker Compose (for the streaming stack)
 - Tailscale account and auth key (for infra networking)
 
 ### Local Python Environment
 
-From repository root:
-
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Infra Environment
-
-Inside infra:
+### Streaming Infrastructure
 
 ```bash
-cp .env.example .env
+cp infra/.env.example infra/.env
 ```
 
 Set at minimum:
 
-- TS_AUTHKEY
-- TS_IP_ADDRESS
-- YOUTUBE_API_KEY
-- YOUTUBE_VIDEO_ID
-- MONGO_USER
-- MONGO_PASS
+| Variable | Description |
+|---|---|
+| `TS_AUTHKEY` | Tailscale auth key |
+| `TS_IP_ADDRESS` | Tailnet IP for inter-service routing |
+| `YOUTUBE_API_KEY` | YouTube Data API v3 key |
+| `YOUTUBE_VIDEO_ID` | Target video to stream comments from |
+| `MONGO_USER` | MongoDB username |
+| `MONGO_PASS` | MongoDB password |
 
-Then start infra:
+Then start the stack:
 
 ```bash
-cd infra
-docker compose up -d --build
+cd infra && docker compose up -d --build
 ```
 
-## How To Run
+---
 
-Typical order:
+## How to Run
 
-1. Run 01_eda.ipynb to ingest/clean/source processed data.
-2. Run 02_ml_classification.ipynb to compare models.
-3. Run 03_dl_classification.ipynb for DistilBERT experiments.
-4. Optional graph workflow:
-	 - Run 04_graph_preprocessing.ipynb
-	 - Run 05_graph_analytics.ipynb
-5. Start infra stack and run 06_streaming.ipynb for live scoring.
+Typical execution order:
 
-## Results and Artifacts
+1. `01_eda.ipynb` – ingest and clean data, generate processed outputs
+2. `02_ml_classification.ipynb` – train and compare ML models
+3. `03_dl_classification.ipynb` – DistilBERT fine-tuning and evaluation
+4. `04_graph_preprocessing.ipynb` – prepare DBLP graph data
+5. `05_graph_analytics.ipynb` – run graph algorithms and extract insights
+6. Start the infra stack, then run `06_streaming.ipynb` for live scoring
 
-- results/model_comparison.csv
-  - Stores comparative metrics from classical ML runs
+Runtime outputs (not tracked in Git) are written to `data/` and `models/` by the notebooks
+and streaming jobs.
 
-Runtime outputs (not tracked in Git) are generated under data/ and models/ when running notebooks and streaming jobs.
+---
 
-## Security and Networking Notes
+## Security Notes
 
-- TS_IP_ADDRESS is network location metadata, not an application secret by itself.
+- `TS_IP_ADDRESS` is network location metadata, not an application secret by itself.
 - Access is gated by tailnet authentication and visibility rules.
-- Real credentials/secrets (API keys, auth keys, passwords) must remain in env files/secrets management.
+- Real credentials (API keys, auth keys, passwords) must remain in env files or a secrets manager
+  and must never be committed to the repository.
+
+---
 
 ## Known Limitations
 
-- Classical Spark ML pipelines can underperform on multilingual or nuanced short text.
-- Example observed in streaming analysis: a short Portuguese negative comment like "Lixo" can be misclassified as Neutral.
-- MLlib-first streaming inference improves operational compatibility and latency, but may trade off absolute accuracy versus stronger transformer models.
+- Classical MLlib pipelines can struggle with short or multilingual text — a Portuguese comment
+  like *"Lixo"* may be misclassified as Neutral.
+- MLlib-first streaming inference improves latency and operational compatibility but trades off
+  some accuracy relative to the transformer model.
+
+---
 
 ## Future Improvements
 
 - Integrate a stronger multilingual transformer for higher semantic accuracy.
-- Add model/version registry and automated streaming quality monitoring.
+- Add a model/version registry and automated streaming quality monitoring.
 - Add reproducible CLI/Makefile tasks for all notebook stages.
-- Expand README and docs with benchmark tables tied to named models in results/model_comparison.csv.
+- Expand docs with benchmark tables tied to named models in `results/model_comparison.csv`.
