@@ -1,0 +1,21 @@
+# Core data + ML
+pyspark==4.1.2
+pandas>=2.2.0
+numpy>=1.26.0
+scikit-learn>=1.5.0
+matplotlib>=3.9.0
+seaborn>=0.13.0
+
+# Dataset utilities
+datasets>=3.0.0
+
+# Deep learning utilities used in src/utils_dl.py
+transformers>=4.45.0
+torch>=2.4.0
+tensorflow>=2.17.0
+
+# Streaming / infra connectivity
+google-api-python-client==2.185.0
+kafka-python==2.2.15
+pymongo==4.10.1
+python-dotenv>=1.0.1

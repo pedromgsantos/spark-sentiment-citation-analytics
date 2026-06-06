@@ -1,0 +1,3 @@
+google-api-python-client==2.185.0
+kafka-python==2.2.15
+pymongo==4.10.1

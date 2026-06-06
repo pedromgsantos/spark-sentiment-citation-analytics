@@ -1,0 +1,73 @@
+services:
+  # --- 1. TAILSCALE (The Secure Mesh Network) ---
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-infra
+    hostname: spark-infra-node
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+    volumes:
+      - tailscale-data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+
+  # --- 2. MONGODB (Attached to Tailscale) ---
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb-server
+    network_mode: "service:tailscale"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
+    volumes:
+      - mongodb-data:/data/db
+    restart: always
+
+# --- 3. KAFKA BROKER (Official Apache Image) ---
+  kafka:
+    image: apache/kafka:latest
+    container_name: kafka-broker
+    network_mode: "service:tailscale"
+    environment:
+      - CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk  # Apache Kafka requires a cluster ID string
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${TS_IP_ADDRESS}:9092
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    restart: always
+
+  # --- 4. YOUTUBE API PRODUCER ---
+  youtube-producer:
+    build: ./youtube_producer
+    container_name: youtube-api-producer
+    network_mode: "service:tailscale"
+    environment:
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - YOUTUBE_VIDEO_ID=${YOUTUBE_VIDEO_ID}
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASS=${MONGO_PASS}
+      - KAFKA_BROKER=${KAFKA_BROKER}
+      - KAFKA_TOPIC=${KAFKA_TOPIC}
+      - POLL_INTERVAL_SECONDS=${POLL_INTERVAL_SECONDS}
+      - KAFKA_STARTUP_TIMEOUT_SECONDS=${KAFKA_STARTUP_TIMEOUT_SECONDS}
+    depends_on:
+      - tailscale
+      - mongodb
+      - kafka
+    restart: always
+
+volumes:
+  tailscale-data:
+  mongodb-data:
