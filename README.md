@@ -9,15 +9,6 @@ This repository reflects a cleaned version of the project, with improved organiz
 
 ---
 
-## Project Authors
-
-Pedro Santos   – 20XXXXXX – [20XXXXXX@novaims.unl.pt](mailto:20XXXXXX@novaims.unl.pt)
-[Teammate 2]   – 20XXXXXX – [20XXXXXX@novaims.unl.pt](mailto:20XXXXXX@novaims.unl.pt)
-[Teammate 3]   – 20XXXXXX – [20XXXXXX@novaims.unl.pt](mailto:20XXXXXX@novaims.unl.pt)
-[Teammate 4]   – 20XXXXXX – [20XXXXXX@novaims.unl.pt](mailto:20XXXXXX@novaims.unl.pt)
-
----
-
 ## Project Overview
 
 YouTube generates billions of comments daily, and the DBLP citation network spans millions of
